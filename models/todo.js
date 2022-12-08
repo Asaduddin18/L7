@@ -1,77 +1,85 @@
 "use strict";
-const { Model, Op } = require("sequelize");
-
+const { Model, where } = require("sequelize");
+const { Op } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class Todo extends Model {
-   
+    /**
+     * Helper method for defining associations.
+     * This method is not a part of Sequelize lifecycle.
+     * The `models/index` file will call this method automatically.
+     */
     static associate(models) {
-      
+      // define association here
     }
+
     static addTodo({ title, dueDate }) {
       return this.create({ title: title, dueDate: dueDate, completed: false });
     }
-    markAsCompleted() {
-      return this.update({ completed: true });
+
+    setCompletionStatus() {
+      return this.update({
+        completed: !this.completed,
+      });
     }
-    deletetodo() {
-      return this.removetask(id);
-    }
+
     static getTodos() {
-      return this.findAll({ order: [["id", "ASC"]] });
+      const todos = Todo.findAll({
+        order: [["id", "ASC"]],
+      });
+      return todos;
     }
-    static overdue() {
-      return this.findAll({
+
+    static getOverdueItems() {
+      const overdueItems = Todo.findAll({
         where: {
-          dueDate: {
-            [Op.lt]: new Date().toLocaleDateString("en-CA"),
-          },
-          completed: false,
+          dueDate: { [Op.lt]: new Date() },
+          completed: { [Op.eq]: false },
         },
         order: [["id", "ASC"]],
       });
+
+      return overdueItems;
     }
-    static dueToday() {
-      return this.findAll({
+
+    static getDueTodayItems() {
+      const dueTodayItems = Todo.findAll({
         where: {
-          dueDate: {
-            [Op.eq]: new Date().toLocaleDateString("en-CA"),
-          },
-          completed: false,
+          dueDate: new Date(),
+          completed: { [Op.eq]: false },
         },
         order: [["id", "ASC"]],
       });
+
+      return dueTodayItems;
     }
-    static dueLater() {
-      return this.findAll({
+
+    static getDueLaterItems() {
+      const dueLaterItems = Todo.findAll({
         where: {
-          dueDate: {
-            [Op.gt]: new Date().toLocaleDateString("en-CA"),
-          },
-          completed: false,
+          dueDate: { [Op.gt]: new Date() },
+          completed: { [Op.eq]: false },
         },
         order: [["id", "ASC"]],
       });
+
+      return dueLaterItems;
     }
-    static completedItems() {
-      return this.findAll({
-        where: {
-          completed: true,
-        },
-        order: [["id", "ASC"]],
-      });
-    }
-    static async remove(id) {
+
+    deleteTodo() {
       return this.destroy({
         where: {
-          id,
+          id: this.id,
         },
       });
     }
-    setCompletionStatus(bool) {
-      return this.update({ completed: bool });
+
+    static getCompletedTodos() {
+      return this.findAll({
+        where: { completed: { [Op.eq]: true } },
+        order: [["id", "DESC"]],
+      });
     }
   }
-
   Todo.init(
     {
       title: DataTypes.STRING,
