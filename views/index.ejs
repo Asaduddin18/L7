@@ -12,8 +12,8 @@
         <script>
           var token = document.querySelector("meta[name='csrf-token']").getAttribute("content");
           function updateATodoF1 (id)  {
-          const bool = document.querySelector(`#todos-checkbox-${id}`).checked
-          console.log(bool);
+          const bool102 = document.querySelector(`#todos-checkbox-${id}`).checked
+          console.log(bool102);
           fetch(`/todos/${id}`, {
             method: "PUT",
             headers: {
@@ -21,7 +21,7 @@
             },
             body : JSON.stringify({
             _csrf : token,
-            completed : bool
+            completed : bool102
             })
           })
           .then((res) => {
@@ -29,8 +29,8 @@
               window.location.reload();
             }
           })
-          .catch((err1)=>{
-          console.log(err1);
+          .catch((err19)=>{
+          console.log(err19);
           })
         };
          function deleteATodoF2(id) {
@@ -46,7 +46,7 @@
             window.location.reload();
           }
          })
-         .catch((err2) => console.log(err2));
+         .catch((err29) => console.log(err29));
       }
       
         </script>
@@ -56,17 +56,18 @@
         <div class="col-start-3 col-span-2">
         <%- include("header.ejs") %> 
         <form action="/todos" method="post">
+          <!-- when our form gets submittedd csrf token also gets submitted -->
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-           <!-- when our form gets submiited csrf token also gets submitted -->
+           
             <div class="flex gap-2 py-4">
                 <div class="flex-auto">
-                    <input type="text" name="title" placeholder="What's next" class="border border-gray-300 rounded text-gray-900 w-full p-2 text-sm" required />
+                    <input type="text" name="title" placeholder="What's next" class="border border-red-300 rounded text-gray-800 w-full p-2 text-sm" required />
                 </div>
             <div class="flex-auto">
-                <input type="date" name="dueDate" class="border border-gray-300 rounded text-gray-900 w-full p-2 text-sm leading-4 " required/>
+                <input type="date" name="dueDate" class="border border-red-400 rounded text-gray-900 w-full p-2 text-sm leading-4 " required/>
             </div>
             <div class="flex-none">
-                <button type="submit" class="bg-green-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">Add</button>
+                <button type="submit" class="bg-green-700 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">Add</button>
             </div>  
             </div>
         </form>
