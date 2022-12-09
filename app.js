@@ -1,115 +1,105 @@
 const express = require("express");
-let csrf = require("tiny-csrf");
-const path = require("path");
+var csrf = require("tiny-csrf");
+//csrf isnt there so used tiny-csrf
 const app = express();
-const { Todo } = require("./models");
+//using body parser
 const bodyParser = require("body-parser");
-let cookieParser = require("cookie-parser");
+var cookieParser = require("cookie-parser");
+const path = require("path");
+//using bodyparser.json
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser("This is a secret string!!!"));
+app.use(csrf("this_should_be_32_character_long", ["POST", "PUT", "DELETE"]));
+//it can be any 32 character
 
 // eslint-disable-next-line no-unused-vars
-const todo = require("./models/todo");
-//app.use() for use
-app.use(bodyParser.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser("shh! some secret string"));
-app.use(csrf("this_should_be_32_charactes_long", ["PUT", "POST", "DELETE"]));
+// const {todo} = require("./models");
 
-// eslint-disable-next-line no-undef
-app.use(express.static(path.join(__dirname, "public")));
+const { Todo } = require("./models");
+
+
 app.set("view engine", "ejs");
-//app.get() to get
-app.get("/", async function (request, response) {
-  try {
-    const overdueItems = await Todo.getOverdueItems();
-    const dueTodayItems = await Todo.getDueTodayItems();
-    const dueLaterItems = await Todo.getDueLaterItems();
-    const completedItems = await Todo.getCompletedTodos();
 
-    if (request.accepts("html")) {
-      return response.render("index", {
-        overdueItems,
-        dueTodayItems,
-        dueLaterItems,
-        completedItems,
-        csrfToken: request.csrfToken(),
-      });
-    } else {
-      return response.json({
-        overdueItems,
-        dueTodayItems,
-        dueLaterItems,
-        completedItems,
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    return response.status(422).json(error);
+app.get("/", async (request, response) => {
+  const allTodosAre = await Todo.getAllTodos();  
+  const completedItemsIs = await Todo.completedItemsAre();
+  const overdue = await Todo.overdue();
+  const dueLater = await Todo.dueLater();
+  const dueToday = await Todo.dueToday();
+  if (request.accepts("html")) {
+    response.render("index", {
+      title: "My Todo Manager",
+      allTodosAre,
+      overdue,
+      dueLater,
+      dueToday,
+      completedItemsIs,
+      csrfToken: request.csrfToken(),//rendering csrf token to avoid invalid csrf token error, for every req. we need to add it
+    });
+  } else {
+    response.json({overdue, dueLater, dueToday, completedItemsIs});
   }
 });
 
-app.get("/todos", async function (_request, response) {
-  console.log("getting the list all Todos ...");
-  
-  try {
-    const todos = await Todo.getTodos();
-    return response.json(todos);
-  } catch (error) {
-    console.log(error);
-    return response.status(422).json(error);
-  }
-});
+// app.get("/todos", async (request, response) => {
+//   // defining route to displaying message
+//   console.log("Todo list");
+//   try {
+//     const todoslist = await Todo.findAll();
+//     return response.json(todoslist);
+//   } catch (error) {
+//     console.log(error);
+//     return response.status(422).json(error);
+//   }
+// });
 
-app.get("/todos/:id", async function (request, response) {
-  try {
-    const todo = await Todo.findByPk(request.params.id);
-    return response.json(todo);
-  } catch (error) {
-    console.log(error);
-    return response.status(422).json(error);
-  }
-});
+// app.get("/todos/:id", async function (request, response) {
+//   try {
+//     const todo = await Todo.findByPk(request.params.id);
+//     return response.json(todo);
+//   } catch (error) {
+//     console.log(error);
+//     return response.status(422).json(error);
+//   }
+// });
 
-app.post("/todos", async function (request, response) {
-  console.log("creating new todo", request.body);
+app.post("/todos", async (request, response) => {
+  // console.log("creating new todo", request.body);
   try {
-    await Todo.addTodo(request.body);
-    //return response.json(todo);
+    // eslint-disable-next-line no-unused-vars
+      await Todo.addaTodo({
+      title: request.body.title,
+      dueDate: request.body.dueDate,
+      completed: false,
+    });
+    //redirect to the root URL
     return response.redirect("/");
-  } catch (error) {
-    console.log(error);
-    return response.status(422).json(error);
+  } catch (err1) {
+    console.log(err1);
+    return response.status(422).json(err1);
   }
 });
 
-//app.put for todo
-app.put("/todos/:id", async function (request, response) {
-  console.log("Mark Todo as completed:", request.params.id);
+app.put("/todos/:id", async (request, response) => {
+  console.log("Marking a todo as completed : ", request.params.id);
   const todo = await Todo.findByPk(request.params.id);
-
   try {
-    const updatedTodo = await todo.setCompletionStatus();
-    return response.json(updatedTodo);
-  } catch (error) {
-    console.log(error);
-    return response.status(422).json(error);
+    const updatedtodoIs = await todo.setCompletionStatusAs(request.body.completed);
+    return response.json(updatedtodoIs);
+  } catch (err2) {
+    console.log(err2);
+    return response.status(422).json(err2);
   }
 });
-
-//app.delete for todo
-app.delete("/todos/:id", async function (request, response) {
-  console.log("delete a todo with ID:", request.params.id);
-  
-  const todo = await Todo.findByPk(request.params.id);
-  if (todo) {
-    try {
-      const deletedTodo = await todo.deleteTodo();
-
-      return response.send(deletedTodo ? true : false);
-    } catch (error) {
-      console.log(error);
-      return response.status(422).json(error);
-    }
-  } else return response.send(false);
+app.delete("/todos/:id", async (request, response) => {
+  console.log("Deleting a todo with a particular id..", request.params.id);
+  try {
+    await Todo.remove(request.params.id);
+    return response.json({ success: true });
+  } catch (err3) {
+    return response.status(422).json(err3);
+  }
 });
-
 module.exports = app;
