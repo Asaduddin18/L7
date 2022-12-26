@@ -21,17 +21,20 @@
                     <% } %>
                 <% } %>
             </div>
-            <form action="/session" method="post">
+            <form style="font-weight: bolder;" action="/session" method="post">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <div class="py-5">
                     <label for="email">emailID: </label>
-                    <input id="email" type="email" name="email" class="border border-color-300 text-gray-900 rounded p-2 w-full">
+                    <input placeholder="Enter Your Email ID" id="email" type="email" name="email" class="border border-color-300 text-gray-900 rounded p-2 w-full">
                 </div>
                 <div class="py-5">
                     <label for="password">Your Password : </label>
-                    <input id="password" type="password" name="password" class="border border-color-300 text-gray-900 rounded p-2 w-full">
+                    <input placeholder="Enter Your Password" id="password" type="password" name="password" class="border border-color-300 text-gray-900 rounded p-2 w-full">
                 </div>
-                <button type="submit" class="bg-green-600 text-white hover:bg-green-900 font-medium rounded px-5 py-2">sign in</button>
+                <button type="submit" style="    border: 3px solid black;
+                padding: 5px;
+                border-radius: 5px;
+                margin-left: 23px;    background-color: #9fa9a9;">sign in</button>
             </form>
         </div>
     </div>

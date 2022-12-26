@@ -26,25 +26,28 @@
                     <% } %>
                 <% } %>
             </div>
-            <form action="/users" method="post">
+            <form style="font-weight: bolder;" action="/users" method="post">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <div class="py-4">
                     <label for="firstName">First Name: </label>
-                    <input id="firstName" type="text" name="firstName" class="border border-color-300 text-gray-900 rounded p-2 w-full">
+                    <input placeholder="Enter Your First Name" id="firstName" type="text" name="firstName" class="border border-color-300 text-gray-900 rounded p-2 w-full">
                 </div>
                 <div class="py-4">
                     <label for="lastName">Last Name: </label>
-                    <input id="lastName" type="text" name="lastName" class="border border-color-300 text-gray-900 rounded p-2 w-full">
+                    <input placeholder="Enter Your Last Name" id="lastName" type="text" name="lastName" class="border border-color-300 text-gray-900 rounded p-2 w-full">
                 </div>
                 <div class="py-4">
                     <label for="email">EmailID : </label>
-                    <input id="email" type="email" name="email" class="border border-color-300 text-gray-900 rounded p-2 w-full">
+                    <input placeholder="Enter Your Email Id" id="email" type="email" name="email" class="border border-color-300 text-gray-900 rounded p-2 w-full">
                 </div>
                 <div class="py-4">
                     <label for="password">Password: </label>
-                    <input id="password" type="password" name="password" class="border border-color-300 text-gray-900 rounded p-2 w-full">
+                    <input placeholder="Enter Your Password" id="password" type="password" name="password" class="border border-color-300 text-gray-900 rounded p-2 w-full">
                 </div>
-                <button type="submit" class="bg-green-800 text-white hover:bg-green-1000 font-medium rounded px-6 py-3" id="bt">Sign up</button>
+                <button type="submit" style="    border: 3px solid black;
+                padding: 5px;
+                border-radius: 5px;
+                margin-left: 23px;    background-color: #9fa9a9;" id="bt">Sign up</button>
             </form>
             
         </div>
