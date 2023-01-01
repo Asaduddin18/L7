@@ -5,12 +5,10 @@ var cookieParser = require("cookie-parser");
 const { Todo, User } = require("./models");
 const bodyParser = require("body-parser");
 const path = require("path");
-//exporting all the libraries related to level10
 const bcrypt = require("bcrypt");
 const passport = require("passport");
 const connectEnsureLogin = require("connect-ensure-login");
 const session = require("express-session");
-// const flash = require("connectFlash");
 const flash = require("connect-flash");
 const LocalStratergy = require("passport-local");
 
@@ -32,12 +30,11 @@ app.use(
   })
 );
 
-app.use(function (req, res, next) {
-  res.locals.messages = req.flash();
+app.use(function (request, response, next) {
+  response.locals.messages = request.flash();
   next();
 });
 
-//initializing 
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -54,23 +51,21 @@ passport.use(
           if (result) {
             return done(null, user);
           } else {
-            return done(null, false, { message: "Password is invalid!!!" });
+            return done(null, false, { message: "Invalid password" });
           }
         })
         .catch(() => {
-          return done(null, false, { message: "Email-ID is invalid" });
+          return done(null, false, { message: "Invalid Email-ID" });
         });
     }
   )
 );
 
-//serializing the user
 passport.serializeUser((user, done) => {
-  console.log("Serialize use in session", user.id);
+  console.log("Serializing user in session", user.id);
   done(null, user.id);
 });
 
-//deserializing the user
 passport.deserializeUser((id, done) => {
   User.findByPk(id)
     .then((user) => {
@@ -82,246 +77,213 @@ passport.deserializeUser((id, done) => {
 });
 
 app.set("view engine", "ejs");
-// eslint-disable-next-line no-undef
+
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/", async function (req, res) {
-  // res.render("index", {
-  //   title: "My Todo Manager",
-  //   csrfToken: req.csrfToken(),
-  // });
-  if (req.user) {
-    return res.redirect("/todos");
+app.get("/", async function (request, response) {
+  if (request.user) {
+    return response.redirect("/todos");
   } else {
-    res.render("index", {
-      title: "My Todo Manager",
-      csrfToken: req.csrfToken(),
+    response.render("index", {
+      title: "To-Do Manager",
+      csrfToken: request.csrfToken(),
     });
   }
 });
-
-// app.get("/todos",
-//   connectEnsureLogin.ensure_LoggedIn(),
-//   async function (req, res) {
-//     try {
-//       const user_Name = req.user.firstName + " " + req.user.lastName;
-//       const logged_In = req.user.id;
-//       const over_Due = await Todo.overDue(loggedIn);
-//       const due_Today = await Todo.dueToday(loggedIn);
-//       const due_Later = await Todo.dueLater(loggedIn);
-//       const completed_Items = await Todo.completedItemsAre(loggedIn);
-//       if (req.accepts("html")) {
-//         res.render("todos", {
-//           title: "To-Do Manager",
-//           user_Name,
-//           over_Due,
-//           due_Today,
-//           due_Later,
-//           completed_Items,
-//           csrfToken: req.csrfToken(),
-//         });
-//       } else {
-//         res.json({
-//           over_Due,due_Today,due_Later,completed_Items,
-//         });
-//       }
-//     } catch (err1) {
-//       console.log(err1);
-//       return res.status(422).json(err1);
-//     }
-//   }
-// );
-
-app.get("/todos",
+//Retriving Todo's data from the todo manager
+app.get(
+  "/todos",
   connectEnsureLogin.ensureLoggedIn(),
-  async function (req, res) {
+  async function (request, response) {
     try {
-      const userName = req.user.firstName + " " + req.user.lastName;
-      const loggedIn = req.user.id;
+      const loggedIn = request.user.id;
+      const userName = request.user.firstName + " " + request.user.lastName;
       const overDue = await Todo.overDue(loggedIn);
       const dueToday = await Todo.dueToday(loggedIn);
       const dueLater = await Todo.dueLater(loggedIn);
-      const completedItems = await Todo.completedItemsAre(loggedIn);
-      if (req.accepts("html")) {
-        res.render("todos", {
+      const completedItems = await Todo.completedItems(loggedIn);
+      if (request.accepts("html")) {
+        response.render("todos", {
           title: "To-Do Manager",
           userName,
           overDue,
           dueToday,
           dueLater,
           completedItems,
-          csrfToken: req.csrfToken(),
+          csrfToken: request.csrfToken(),
         });
       } else {
-        res.json({
-          overDue,dueToday,dueLater,completedItems,
+        response.json({
+          overDue,
+          dueToday,
+          dueLater,
+          completedItems,
         });
       }
-    } catch (err1) {
-      console.log(err1);
-      return res.status(422).json(err1);
+    } catch (err) {
+      console.log(err);
+      return response.status(422).json(err);
+    }
+  }
+);
+//Sign-up into the todo manager
+app.get("/signup", (request, response) => {
+  response.render("signup", {
+    title: "Sign up",
+    csrfToken: request.csrfToken(),
+  });
+});
+
+//Login into the todo manager
+app.get("/login", (request, response) => {
+  response.render("login", {
+    title: "Login",
+    csrfToken: request.csrfToken(),
+  });
+});
+
+//To obtain todos from the todos manager
+
+app.get(
+  "/todos/:id",
+  connectEnsureLogin.ensureLoggedIn(),
+  async function (request, response) {
+    try {
+      const todo = await Todo.findByPk(request.params.id);
+      return response.json(todo);
+    } catch (error) {
+      console.log(error);
+      return response.status(422).json(error);
     }
   }
 );
 
+//Sign-out from the todo manager
+app.get("/signout", (request, response, next) => {
+  request.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    response.redirect("/");
+  });
+});
 
-//URL Route to users
-app.post("/users", async (req, res) => {
-  if (!req.body.firstName) {
-    req.flash("error", "Enter your first name");
-    return res.redirect("/signup");
+app.post("/users", async (request, response) => {
+  if (!request.body.firstName) {
+    request.flash("error", "Please enter your first name");
+    return response.redirect("/signup");
   }
-  if (!req.body.email) {
-    req.flash("error", "Enter your email ID");
-    return res.redirect("/signup");
+  if (!request.body.email) {
+    request.flash("error", "Please enter email ID");
+    return response.redirect("/signup");
   }
-  if (!req.body.password) {
-    req.flash("error", "Enter your password");
-    return res.redirect("/signup");
+  if (!request.body.password) {
+    request.flash("error", "Please enter your password");
+    return response.redirect("/signup");
   }
-  if (req.body.password < 8) {
-    req.flash("error", "Password Length must be atleast 8");
-    return res.redirect("/signup");
+  if (request.body.password < 8) {
+    request.flash("error", "Password length should be atleast 8");
+    return response.redirect("/signup");
   }
-  const hashedPwd = await bcrypt.hash(req.body.password, saltRounds);
+  const hashedPwd = await bcrypt.hash(request.body.password, saltRounds);
   try {
     const user = await User.create({
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      email: req.body.email,
+      firstName: request.body.firstName,
+      lastName: request.body.lastName,
+      email: request.body.email,
       password: hashedPwd,
     });
-    req.login(user, (err1) => {
-      if (err1) {
-        console.log(err1);
-        res.redirect("/");
+    request.login(user, (err) => {
+      if (err) {
+        console.log(err);
+        response.redirect("/");
       } else {
-        res.redirect("/todos");
+        response.redirect("/todos");
       }
     });
-  } catch (errori) {
-    req.flash("error", errori.message);
-    return res.redirect("/signup");
+  } catch (error) {
+    request.flash("error", error.message);
+    return response.redirect("/signup");
   }
 });
 
-//URL Route to login
-app.get("/login", (req, res) => {
-  res.render("login", {
-    title: "Login",
-    csrfToken: req.csrfToken(),
-  });
-});
 
-//URL Route to signup
-app.get("/signup", (req, res) => {
-  res.render("signup", {
-    title: "Sign up",
-    csrfToken: req.csrfToken(),
-  });
-});
-
-//URL Route to session
-app.post("/session",
+app.post(
+  "/session",
   passport.authenticate("local", {
     failureRedirect: "/login",
     failureFlash: true,
   }),
-  (req, res) => {
-    res.redirect("/todos");
+  (request, response) => {
+    response.redirect("/todos");
   }
 );
 
-//URL Route to signout
-app.get("/signout", (req, res, next) => {
-  req.logout((err1) => {
-    if (err1) {
-      return next(err1);
-    }
-    res.redirect("/");
-  });
-});
 
-//Not required for this level
-app.get("/todos/:id",
-  connectEnsureLogin.ensureLoggedIn(),
-  async function (req, res) {
-    try {
-      const todo1 = await Todo.findByPk(req.params.id);
-      return res.json(todo1);
-    } catch (error2) {
-      console.log(error2);
-      return res.status(422).json(error2);
-    }
-  }
-);
 
-//URL Route to todos
-app.post("/todos",
+
+
+//post request to the todos app
+app.post(
+  "/todos",
   connectEnsureLogin.ensureLoggedIn(),
-  async function (req, res) {
-    if (req.body.title.length < 5) {
-      req.flash("error", "Title length should atleast be 5");
-      return res.redirect("/todos");
+  async function (request, response) {
+    if (request.body.title.length < 5) {
+      request.flash("error", "Title length should be atleast 5");
+      return response.redirect("/todos");
     }
-    if (!req.body.dueDate) {
-      req.flash("error", "Select a due date");
-      return res.redirect("/todos");
+    if (!request.body.dueDate) {
+      request.flash("error", "Please select a due date");
+      return response.redirect("/todos");
     }
     try {
-      await Todo.addaTodo({
-        title: req.body.title,
-        dueDate: req.body.dueDate,
-        userID: req.user.id,
+      await Todo.addTodo({
+        title: request.body.title,
+        dueDate: request.body.dueDate,
+        userID: request.user.id,
       });
-      return res.redirect("/todos");
-    } catch (error1) {
-      console.log(error1);
-      return res.status(422).json(error1);
+      return response.redirect("/todos");
+    } catch (error) {
+      console.log(error);
+      return response.status(422).json(error);
     }
   }
 );
 
-//Error
-// app.put("/todos/:id",
-//   connectEnsureLogin.ensureLoggedIn(),
-//   async function (req, res) {
-//     // const todo = await Todo.findByPk(req.params.id);
-//     
-//   }
-// );
-
-//URL Route to completion status
-app.put("/todos/:id",
+app.put(
+  "/todos/:id",
   connectEnsureLogin.ensureLoggedIn(),
-  async function (req, res) {
-    // const todo = await Todo.findByPk(req.params.id);
+  async function (request, response) {
     try {
-      const todo = await Todo.findByPk(req.params.id);
-      const updatedTodoIs = await todo.setCompletionStatusAs(
-        req.body.completed
+      const todo = await Todo.findByPk(request.params.id);
+      const updatedTodo = await todo.setCompletionStatus(
+        request.body.completed
       );
-      return res.json(updatedTodoIs);
-    } catch (error1) {
-      console.log(error1);
-      return res.status(422).json(error1);
+      return response.json(updatedTodo);
+    } catch (error) {
+      console.log(error);
+      return response.status(422).json(error);
     }
   }
 );
 
-//URL Route to deleting
-app.delete("/todos/:id",
+
+//deleting a todo form the todo manager app
+app.delete(
+  "/todos/:id",
   connectEnsureLogin.ensureLoggedIn(),
-  async function (req, resp) {
-    console.log("Delete a todo with a particular id : ", req.params.id);
-    
+  async function (request, response) {
+    console.log("We have to delete a Todo with ID: ", request.params.id);
+    // FILL IN YOUR CODE HERE
     try {
-      const res = await Todo.remove(req.params.id, req.user.id);
-      return res.json({ success: res === 1 });
-    } catch (error1) {
-      console.log(error1);
-      return resp.status(422).json(error1);
+      const res = await Todo.remove(request.params.id, request.user.id);
+      return response.json({ success: res === 1 });
+    } catch (error) {
+      console.log(error);
+      return response.status(422).json(error);
     }
+    // First, we should query our database to delete a Todo by ID and then we have to respond back with true/false
+    // based on whether the Todo was deleted or not.
   }
 );
 

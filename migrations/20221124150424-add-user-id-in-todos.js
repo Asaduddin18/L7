@@ -27,6 +27,7 @@ module.exports = {
     /**
      * Add reverting commands here.
      *
+     * example
      * Example:
      * await queryInterface.dropTable('users');
      */
